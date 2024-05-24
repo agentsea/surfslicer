@@ -152,7 +152,7 @@ class SemanticDesktop(Tool):
             thread.add_msg(msg)
 
             response = router.chat(
-                thread, namespace="zoom", expect=ZoomSelection, agent_id="SurfPizza"
+                thread, namespace="zoom", expect=ZoomSelection, agent_id="SurfSlicer"
             )
             if not response.parsed:
                 raise SystemError("No response parsed from zoom")

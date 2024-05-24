@@ -12,7 +12,7 @@ from surfkit.server.routes import task_router
 from .agent import Agent, router
 
 # Configure logging
-logger: Final = logging.getLogger("surfpizza")
+logger: Final = logging.getLogger("surfslicer")
 logger.setLevel(int(os.getenv("LOG_LEVEL", str(logging.DEBUG))))
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.INFO)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     reload = os.getenv("SURF_RELOAD", "true") == "true"
     host = os.getenv("SURF_HOST", "0.0.0.0")
     uvicorn.run(
-        "surfpizza.server:app",
+        "surfslicer.server:app",
         host=host,
         port=int(port),
         reload=reload,

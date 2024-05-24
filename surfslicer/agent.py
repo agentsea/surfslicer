@@ -25,11 +25,11 @@ logger.setLevel(int(os.getenv("LOG_LEVEL", str(logging.DEBUG))))
 console = Console(force_terminal=True)
 
 
-class SurfPizzaConfig(BaseModel):
+class SurfSlicerConfig(BaseModel):
     pass
 
 
-class SurfPizza(TaskAgent):
+class SurfSlicer(TaskAgent):
     """A GUI desktop agent that slices up the image"""
 
     def solve_task(
@@ -290,34 +290,34 @@ class SurfPizza(TaskAgent):
         return [Desktop]
 
     @classmethod
-    def config_type(cls) -> Type[SurfPizzaConfig]:
+    def config_type(cls) -> Type[SurfSlicerConfig]:
         """Type of config
 
         Returns:
             Type[DinoConfig]: Config type
         """
-        return SurfPizzaConfig
+        return SurfSlicerConfig
 
     @classmethod
-    def from_config(cls, config: SurfPizzaConfig) -> "SurfPizza":
+    def from_config(cls, config: SurfSlicerConfig) -> "SurfSlicer":
         """Create an agent from a config
 
         Args:
             config (DinoConfig): Agent config
 
         Returns:
-            SurfPizza: The agent
+            SurfSlicer: The agent
         """
-        return SurfPizza()
+        return SurfSlicer()
 
     @classmethod
-    def default(cls) -> "SurfPizza":
+    def default(cls) -> "SurfSlicer":
         """Create a default agent
 
         Returns:
-            SurfPizza: The agent
+            SurfSlicer: The agent
         """
-        return SurfPizza()
+        return SurfSlicer()
 
     @classmethod
     def init(cls) -> None:
@@ -325,4 +325,4 @@ class SurfPizza(TaskAgent):
         return
 
 
-Agent = SurfPizza
+Agent = SurfSlicer

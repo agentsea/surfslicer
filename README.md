@@ -5,21 +5,21 @@
     <img src="https://project-logo.png" alt="Logo" width="80">
   </a> -->
 
-  <h1 align="center">SurfPizza</h1>
+  <h1 align="center">SurfSlicer</h1>
     <p align="center">
-    <img src="https://storage.googleapis.com/guisurfer-assets/SurfPizza.webp" alt="SurfPizza Logo" width="200" style="border-radius: 20px;">
+    <img src="https://storage.googleapis.com/guisurfer-assets/SurfPizza.webp" alt="SurfSlicer Logo" width="200" style="border-radius: 20px;">
     </p>
   <p align="center">
     A GUI surfer which slices up the screen
     <br />
-    <a href="https://github.com/agentsea/surfpizza"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/agentsea/surfslicer"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/agentsea/surfpizza">View Demo</a>
+    <a href="https://github.com/agentsea/surfslicer">View Demo</a>
     ·
-    <a href="https://github.com/agentsea/surfpizza/issues">Report Bug</a>
+    <a href="https://github.com/agentsea/surfslicer/issues">Report Bug</a>
     ·
-    <a href="https://github.com/agentsea/surfpizza/issues">Request Feature</a>
+    <a href="https://github.com/agentsea/surfslicer/issues">Request Feature</a>
   </p>
   <br>
 </p>

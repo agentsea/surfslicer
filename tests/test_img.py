@@ -1,6 +1,6 @@
 import pytest
 from PIL import Image
-from surfpizza.img import (
+from surfslicer.img import (
     create_grid_image_by_num_cells,
     zoom_in,
     superimpose_images,

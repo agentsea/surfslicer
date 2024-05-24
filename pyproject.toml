@@ -1,12 +1,12 @@
 
 [tool.poetry]
-name = "SurfPizza"
+name = "SurfSlicer"
 version = "0.1.0"
 description = "AI agent for A GUI surfer which uses coordinate dots for grounding"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "surfpizza"}]
+packages = [{include = "surfslicer"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

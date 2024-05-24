@@ -1,11 +1,11 @@
 api_version: v1
 kind: TaskAgent
-name: "SurfPizzaAlt"
+name: "SurfSlicer"
 description: "A GUI surfer which slices up the screen"
 tags:
   - "gui"
   - "desktop"
-cmd: "poetry run python -m surfpizza.server"
+cmd: "poetry run python -m surfslicer.server"
 img_repo: "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfpizza"
 versions:
   latest: "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfpizza:latest"
