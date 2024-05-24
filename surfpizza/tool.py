@@ -16,17 +16,9 @@ from mllm import Router, RoleThread, RoleMessage
 from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw
 
-from .img import (
-    create_grid_image_by_size,
-    create_grid_image_by_num_cells,
-    zoom_in,
-    superimpose_images,
-    b64_to_image,
-    image_to_b64,
-    load_image_base64,
-    divide_image_into_cells,
-    Box,
-)
+from .img import b64_to_image, image_to_b64, Box
+from .grid import create_grid_image, zoom_in
+from .merge_image import superimpose_images
 
 
 router = Router.from_env()
@@ -86,7 +78,7 @@ class SemanticDesktop(Tool):
 
             number: int = Field(
                 ...,
-                description=f"Number of the cell containing the element we wish to select",
+                description=f"Number of the dot closest to the place we want to click.",
             )
 
         current_img_b64 = self.desktop.take_screenshot()
@@ -96,6 +88,7 @@ class SemanticDesktop(Tool):
 
         initial_box = Box(0, 0, img_width, img_height)
         bounding_boxes = [initial_box]
+        total_upscale = 1
 
         thread = RoleThread()
 
@@ -108,9 +101,9 @@ class SemanticDesktop(Tool):
 
         for i in range(max_depth):
             logger.info(f"zoom depth {i}")
-            current_img.save(
-                os.path.join(self.img_path, f"{click_hash}_current_{i}.png")
-            )
+            image_path = os.path.join(self.img_path, f"{click_hash}_current_{i}.png")
+            current_img.save(image_path)
+            img_width, img_height = current_img.size
 
             screenshot_b64 = image_to_b64(current_img)
             self.task.post_message(
@@ -120,46 +113,41 @@ class SemanticDesktop(Tool):
                 images=[screenshot_b64],
             )
 
-            # -- If you want dots
-            # current_dim = current_img.size
-            # grid_img = create_grid_image_by_num_cells(
-            #     image_width=current_dim[0],
-            #     image_height=current_dim[1],
-            #     color_circle=color_circle,
-            #     color_text=color_text,
-            #     num_cells=4,
-            # )
-            # merged_image = superimpose_images(current_img.copy(), grid_img)
-            # merged_image_b64 = image_to_b64(merged_image)
+            color_circle = "red"
+            color_number = "yellow"
+            n = 8
+            upscale = 3
 
-            composite, cropped_imgs, boxes = divide_image_into_cells(
-                current_img, num_cells=num_cells
-            )
-            debug_img = self._debug_image(current_img.copy(), boxes)
+            grid_path = os.path.join(self.img_path, f"{click_hash}_grid_{i}.png")
+            create_grid_image(img_width, img_height, color_circle, color_number, n, grid_path)
 
+            merged_image_path = os.path.join(self.img_path, f"{click_hash}_merge_{i}.png")
+            merged_image = superimpose_images(image_path, grid_path, 1)
+            merged_image.save(merged_image_path)
+
+            merged_image_b64 = image_to_b64(merged_image)
             self.task.post_message(
                 role="assistant",
-                msg=f"Composite for depth {i}",
+                msg=f"Merge image for depth {i}",
                 thread="debug",
-                images=[image_to_b64(composite)],
+                images=[merged_image_b64],
             )
-            composite.save(os.path.join(self.img_path, f"{click_hash}_merged_{i}.png"))
-            composite_b64 = image_to_b64(composite)
 
-            prompt = (
-                "You are an experienced AI trained to find the elements on the screen."
-                "I am going to send you two images, the first image is a screenshot of the web application, and on the "
-                "second image I have taken the same screenshot sliced it into cells with a number next to each cell "
-                "to help you to find required elements. "
-                f"Please select the number of the cell which contains '{description}' "
-                f"Please return you response as raw JSON following the schema {ZoomSelection.model_json_schema()} "
-                "Be concise and only return the raw json, for example if the image you wanted to select had a number 3 next to it "
-                "you would return {'number': 3}"
-            )
+            prompt = f"""
+            You are an experienced AI trained to find the elements on the screen.
+            You see a screenshot of the web application. 
+            I have drawn some big {color_number} numbers on {color_circle} circles on this image 
+            to help you to find required elements. 
+            Please tell me the closest big {color_number} number to {description}.
+            Please return you response as raw JSON following the schema {ZoomSelection.model_json_schema()}
+            Be concise and only return the raw json, for example if the circle you wanted to select had a number 3 next to it
+            you would return {{'number': 3}}
+            """
+            
             msg = RoleMessage(
                 role="user",
                 text=prompt,
-                images=[screenshot_b64, composite_b64],
+                images=[merged_image_b64],
             )
             thread.add_msg(msg)
 
@@ -181,9 +169,11 @@ class SemanticDesktop(Tool):
             )
             console.print(JSON(zoom_resp.model_dump_json()))
 
-            current_img = cropped_imgs[zoom_resp.number]
-            current_box = boxes[zoom_resp.number]
-            absolute_box = current_box.to_absolute(bounding_boxes[-1])
+            zoomed_img, top_left, bottom_right = zoom_in(image_path, n, zoom_resp.number, upscale)
+            current_img = zoomed_img.copy()
+            bounding_box = Box(top_left[0], top_left[1], bottom_right[0], bottom_right[1])
+            absolute_box = bounding_box.to_absolute_with_upscale(bounding_boxes[-1], total_upscale)
+            total_upscale *= upscale
             bounding_boxes.append(absolute_box)
 
         click_x, click_y = bounding_boxes[-1].center()

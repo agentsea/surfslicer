@@ -54,6 +54,14 @@ class Box:
             self.bottom + parent_box.top,
         )
 
+    def to_absolute_with_upscale(self, parent_box: "Box", upscale: int = 1) -> "Box":
+        return Box(
+            round(self.left / upscale + parent_box.left),
+            round(self.top / upscale + parent_box.top),
+            round(self.right / upscale + parent_box.left),
+            round(self.bottom / upscale + parent_box.top),
+        )
+
 
 def divide_image_into_cells(
     image: Image.Image, num_cells: int
