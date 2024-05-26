@@ -49,9 +49,9 @@ app.add_middleware(
 app.include_router(task_router(Agent, router))
 
 if __name__ == "__main__":
-    port = os.getenv("SURF_PORT", "9090")
-    reload = os.getenv("SURF_RELOAD", "true") == "true"
-    host = os.getenv("SURF_HOST", "0.0.0.0")
+    port = os.getenv("SERVER_PORT", "9090")
+    reload = os.getenv("SERVER_RELOAD", "true") == "true"
+    host = os.getenv("SERVER_HOST", "0.0.0.0")
     uvicorn.run(
         "surfslicer.server:app",
         host=host,
