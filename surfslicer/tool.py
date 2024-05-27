@@ -1,25 +1,22 @@
+import hashlib
+import logging
 import os
 import time
-import logging
-import time
-import hashlib
 from typing import List, Optional, Tuple
 
-from agentdesk.device import Desktop
-from toolfuse import action
 import requests
+from agentdesk.device import Desktop
+from mllm import RoleMessage, RoleThread, Router
+from PIL import Image, ImageDraw
+from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.json import JSON
 from taskara import Task
-from toolfuse import Tool
-from mllm import Router, RoleThread, RoleMessage
-from pydantic import BaseModel, Field
-from PIL import Image, ImageDraw
+from toolfuse import Tool, action
 
-from .img import b64_to_image, image_to_b64, Box
 from .grid import create_grid_image, zoom_in
+from .img import Box, b64_to_image, image_to_b64
 from .merge_image import superimpose_images
-
 
 router = Router.from_env()
 console = Console()
@@ -119,9 +116,13 @@ class SemanticDesktop(Tool):
             upscale = 3
 
             grid_path = os.path.join(self.img_path, f"{click_hash}_grid_{i}.png")
-            create_grid_image(img_width, img_height, color_circle, color_number, n, grid_path)
+            create_grid_image(
+                img_width, img_height, color_circle, color_number, n, grid_path
+            )
 
-            merged_image_path = os.path.join(self.img_path, f"{click_hash}_merge_{i}.png")
+            merged_image_path = os.path.join(
+                self.img_path, f"{click_hash}_merge_{i}.png"
+            )
             merged_image = superimpose_images(image_path, grid_path, 1)
             merged_image.save(merged_image_path)
 
@@ -141,9 +142,9 @@ class SemanticDesktop(Tool):
             Please tell me the closest big {color_number} number to {description}.
             Please return you response as raw JSON following the schema {ZoomSelection.model_json_schema()}
             Be concise and only return the raw json, for example if the circle you wanted to select had a number 3 next to it
-            you would return {{'number': 3}}
+            you would return {{"number": 3}}
             """
-            
+
             msg = RoleMessage(
                 role="user",
                 text=prompt,
@@ -169,10 +170,16 @@ class SemanticDesktop(Tool):
             )
             console.print(JSON(zoom_resp.model_dump_json()))
 
-            zoomed_img, top_left, bottom_right = zoom_in(image_path, n, zoom_resp.number, upscale)
+            zoomed_img, top_left, bottom_right = zoom_in(
+                image_path, n, zoom_resp.number, upscale
+            )
             current_img = zoomed_img.copy()
-            bounding_box = Box(top_left[0], top_left[1], bottom_right[0], bottom_right[1])
-            absolute_box = bounding_box.to_absolute_with_upscale(bounding_boxes[-1], total_upscale)
+            bounding_box = Box(
+                top_left[0], top_left[1], bottom_right[0], bottom_right[1]
+            )
+            absolute_box = bounding_box.to_absolute_with_upscale(
+                bounding_boxes[-1], total_upscale
+            )
             total_upscale *= upscale
             bounding_boxes.append(absolute_box)
 
