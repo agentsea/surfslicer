@@ -64,9 +64,8 @@ class SemanticDesktop(Tool):
         logging.debug("clicking icon with description ", description)
 
         max_depth = int(os.getenv("MAX_DEPTH", 3))
-        color_text = os.getenv("COLOR_TEXT", "yellow")
+        color_number = os.getenv("COLOR_NUMBER", "yellow")
         color_circle = os.getenv("COLOR_CIRCLE", "red")
-        num_cells = int(os.getenv("NUM_CELLS", 3))
 
         click_hash = hashlib.md5(description.encode()).hexdigest()[:5]
 
@@ -87,7 +86,26 @@ class SemanticDesktop(Tool):
         bounding_boxes = [initial_box]
         total_upscale = 1
 
+        # number of "cells" along one side; the numbers are in the corners of those "cells"
+        # even numbers are preferable, because in this case we can pick an exact middle of the 
+        # zoomed image if we need to fall back
+        n = 8 
+        # we upscale the pieces that we cut out by this factor; otherwise it's hard to see the numbers
+        upscale = 3
+
         thread = RoleThread()
+
+        prompt = f"""
+        You are an experienced AI trained to find the elements on the screen.
+        You see a screenshot of the web application. 
+        I have drawn some big {color_number} numbers on {color_circle} circles on this image 
+        to help you to find required elements.
+        Please tell me the closest big {color_number} number on a {color_circle} circle to the center of the {description}.
+        Please note that some circles may lay on the {description}. If that's the case, return the number in any of these circles.
+        Please return you response as raw JSON following the schema {ZoomSelection.model_json_schema()}
+        Be concise and only return the raw json, for example if the circle you wanted to select had a number 3 in it
+        you would return {{"number": 3}}
+        """
 
         self.task.post_message(
             role="assistant",
@@ -110,11 +128,6 @@ class SemanticDesktop(Tool):
                 images=[screenshot_b64],
             )
 
-            color_circle = "red"
-            color_number = "yellow"
-            n = 8
-            upscale = 3
-
             grid_path = os.path.join(self.img_path, f"{click_hash}_grid_{i}.png")
             create_grid_image(
                 img_width, img_height, color_circle, color_number, n, grid_path
@@ -134,17 +147,6 @@ class SemanticDesktop(Tool):
                 images=[merged_image_b64],
             )
 
-            prompt = f"""
-            You are an experienced AI trained to find the elements on the screen.
-            You see a screenshot of the web application. 
-            I have drawn some big {color_number} numbers on {color_circle} circles on this image 
-            to help you to find required elements. 
-            Please tell me the closest big {color_number} number to {description}.
-            Please return you response as raw JSON following the schema {ZoomSelection.model_json_schema()}
-            Be concise and only return the raw json, for example if the circle you wanted to select had a number 3 next to it
-            you would return {{"number": 3}}
-            """
-
             msg = RoleMessage(
                 role="user",
                 text=prompt,
@@ -152,26 +154,42 @@ class SemanticDesktop(Tool):
             )
             thread.add_msg(msg)
 
-            response = router.chat(
-                thread, namespace="zoom", expect=ZoomSelection, agent_id="SurfSlicer"
-            )
-            if not response.parsed:
-                raise SystemError("No response parsed from zoom")
+            try:
+                response = router.chat(
+                    thread, namespace="zoom", expect=ZoomSelection, agent_id="SurfSlicer", retries=1
+                )
+                if not response.parsed:
+                    raise SystemError("No response parsed from zoom")
+                
+                logger.info(f"zoom response {response}")
 
-            logger.info(f"zoom response {response}")
+                self.task.add_prompt(response.prompt)
 
-            self.task.add_prompt(response.prompt)
+                zoom_resp = response.parsed
+                self.task.post_message(
+                    role="assistant",
+                    msg=f"Selection {zoom_resp.model_dump_json()}",
+                    thread="debug",
+                )
+                console.print(JSON(zoom_resp.model_dump_json()))
+                chosen_number = zoom_resp.number
+            except Exception as e:
+                logger.info(f"Error in analyzing zoom: {e}.")
 
-            zoom_resp = response.parsed
-            self.task.post_message(
-                role="assistant",
-                msg=f"Selection {zoom_resp.model_dump_json()}",
-                thread="debug",
-            )
-            console.print(JSON(zoom_resp.model_dump_json()))
+                # MOST of the times when it fails, it's on the last level of Zoom. 
+                # The workaround is to pick the number in the middle of the image.
+                if n % 2 == 0:
+                    chosen_number = ((n - 1) ** 2 + 1) // 2
+                else:
+                    chosen_number = (n - 1) ** 2 // 2 - (n - 1) // 2
+                self.task.post_message(
+                    role="assistant",
+                    msg=f"Failed to analyze. Fall back to #{chosen_number}",
+                    thread="debug",
+                )
 
             zoomed_img, top_left, bottom_right = zoom_in(
-                image_path, n, zoom_resp.number, upscale
+                image_path, n, chosen_number, upscale
             )
             current_img = zoomed_img.copy()
             bounding_box = Box(

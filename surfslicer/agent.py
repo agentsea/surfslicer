@@ -101,11 +101,11 @@ class SurfSlicer(TaskAgent):
         thread.post(
             role="user",
             msg=(
-                "You are an AI assistant which uses a devices to accomplish tasks. "
+                "You are an AI assistant which uses devices to accomplish tasks. "
                 f"Your current task is {task.description}, and your available tools are {tools} "
-                "For each screenshot I will send you please return the result chosen action as  "
+                "For each screenshot I will send you please return the result chosen action as a "
                 f"raw JSON adhearing to the schema {V1ActionSelection.model_json_schema()} "
-                "Let me know when you are ready and I'll send you the first screenshot"
+                "Let me know when you are ready and I'll send you the first screenshot. "
             ),
         )
         response = router.chat(thread, namespace="system")
@@ -198,7 +198,10 @@ class SurfSlicer(TaskAgent):
                 role="user",
                 text=(
                     "Here is a screenshot of the current desktop, please select an action from the provided schema."
-                    "Please return just the raw JSON"
+                    "Carefully analyze the screenshot and select an action. Watch out for elements that "
+                    "are different from others, for example, have the border of the different color. "
+                    "Such elements are usually already in focus, and you can try to type text in them right away. "
+                    "Please return just the raw JSON."
                 ),
                 images=[f"data:image/png;base64,{screenshot_b64}"],
             )
