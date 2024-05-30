@@ -49,7 +49,7 @@ class SemanticDesktop(Tool):
         self.task = task
 
     @action
-    def click_object(self, description: str, type: str) -> None:
+    def click_object(self, description: str, type: str, button: str = "left") -> None:
         """Click on an object on the screen
 
         Args:
@@ -57,6 +57,7 @@ class SemanticDesktop(Tool):
                 "a round dark blue icon with the text 'Home' in the top-right of the image", please be a generic as possible
             type (str): Type of click, can be 'single' for a single click or
                 'double' for a double click. If you need to launch an application from the desktop choose 'double'
+            button (str, optional): Mouse button to click. Options are 'left' or 'right'. Defaults to 'left'.
         """
         if type != "single" and type != "double":
             raise ValueError("type must be'single' or 'double'")
@@ -218,10 +219,12 @@ class SemanticDesktop(Tool):
             thread="debug",
             images=[image_to_b64(debug_img)],
         )
-        self._click_coords(x=click_x, y=click_y, type=type)
+        self._click_coords(x=click_x, y=click_y, type=type, button=button)
         return
 
-    def _click_coords(self, x: int, y: int, type: str = "single") -> None:
+    def _click_coords(
+        self, x: int, y: int, type: str = "single", button: str = "left"
+    ) -> None:
         """Click mouse button
 
         Args:
@@ -229,6 +232,7 @@ class SemanticDesktop(Tool):
                 it will click on current location. Defaults to None.
             y (Optional[int], optional): Y coordinate to move to, if not provided
                 it will click on current location. Defaults to None.
+            type (str, optional): Type of click, can be single or double. Defaults to "single".
             button (str, optional): Button to click. Defaults to "left".
         """
         # TODO: fix click cords in agentd
@@ -240,12 +244,16 @@ class SemanticDesktop(Tool):
 
         if type == "single":
             logging.debug("clicking")
-            resp = requests.post(f"{self.desktop.base_url}/click", json={})
+            resp = requests.post(
+                f"{self.desktop.base_url}/click", json={"button": button}
+            )
             resp.raise_for_status()
             time.sleep(2)
         elif type == "double":
             logging.debug("double clicking")
-            resp = requests.post(f"{self.desktop.base_url}/double_click", json={})
+            resp = requests.post(
+                f"{self.desktop.base_url}/double_click", json={"button": button}
+            )
             resp.raise_for_status()
             time.sleep(2)
         else:
