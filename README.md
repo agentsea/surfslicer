@@ -7,12 +7,12 @@
 
   <h1 align="center">SurfSlicer</h1>
     <p align="center">
-    <img src="https://storage.googleapis.com/guisurfer-assets/SurfPizza.webp" alt="SurfSlicer Logo" width="200" style="border-radius: 20px;">
+    <img src="logo/SurfSlicer-512x512.jpg" alt="SurfSlicer Logo" width="200" style="border-radius: 20px;">
     </p>
   <p align="center">
-    A GUI surfer which slices up the screen
+    A GUI surfer which zooms in and slices. A lot.
     <br />
-    <a href="https://github.com/agentsea/surfslicer"><strong>Explore the docs »</strong></a>
+    <a href="https://docs.hub.agentsea.ai/introduction"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/agentsea/surfslicer">View Demo</a>
