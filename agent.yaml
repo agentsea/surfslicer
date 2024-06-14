@@ -1,15 +1,15 @@
 api_version: v1
 kind: TaskAgent
 name: "SurfSlicer"
-description: "A GUI surfer which slices up the screen"
+description: "A GUI surfer which zooms and slices up the screen"
 tags:
   - "gui"
 supports:
   - "desktop"
 cmd: "poetry run python -m surfslicer.server"
-img_repo: "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfpizza"
+img_repo: "mariyadavydova/surfslicer"
 versions:
-  latest: "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfpizza:latest"
+  latest: "mariyadavydova/surfslicer:latest"
 runtimes:
   - type: "agent"
     preference:
