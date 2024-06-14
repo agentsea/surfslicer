@@ -7,9 +7,9 @@ tags:
 supports:
   - "desktop"
 cmd: "poetry run python -m surfslicer.server"
-img_repo: "mariyadavydova/surfslicer"
+img_repo: "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfslicer"
 versions:
-  latest: "mariyadavydova/surfslicer:latest"
+  latest: "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfslicer:latest"
 runtimes:
   - type: "agent"
     preference:
