@@ -201,6 +201,8 @@ class SurfSlicer(TaskAgent):
                     "Carefully analyze the screenshot and select an action. Watch out for elements that "
                     "are different from others, for example, have the border of the different color. "
                     "Such elements are usually already in focus, and you can try to type text in them right away. "
+                    "However, if you tried to type on a previous step and want to type the same input again, you better "
+                    "focus on the input field first by clicking on it. "
                     "Please return just the raw JSON."
                 ),
                 images=[f"data:image/png;base64,{screenshot_b64}"],
