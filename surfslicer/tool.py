@@ -15,7 +15,7 @@ from taskara import Task
 from toolfuse import Tool, action
 
 from .grid import create_grid_image, zoom_in
-from .img import Box, b64_to_image, image_to_b64
+from .img import Box
 from .merge_image import superimpose_images
 
 router = Router.from_env()
@@ -75,11 +75,10 @@ class SemanticDesktop(Tool):
 
             number: int = Field(
                 ...,
-                description=f"Number of the dot closest to the place we want to click.",
+                description="Number of the dot closest to the place we want to click.",
             )
 
-        current_img_b64 = self.desktop.take_screenshot()
-        current_img = b64_to_image(current_img_b64)
+        current_img = self.desktop.take_screenshots()[0]
         original_img = current_img.copy()
         img_width, img_height = current_img.size
 
@@ -112,7 +111,7 @@ class SemanticDesktop(Tool):
             role="assistant",
             msg=f"Clicking '{type}' on object '{description}'",
             thread="debug",
-            images=[image_to_b64(current_img)],
+            images=[current_img],
         )
 
         for i in range(max_depth):
@@ -121,12 +120,11 @@ class SemanticDesktop(Tool):
             current_img.save(image_path)
             img_width, img_height = current_img.size
 
-            screenshot_b64 = image_to_b64(current_img)
             self.task.post_message(
                 role="assistant",
                 msg=f"Zooming into image with depth {i}",
                 thread="debug",
-                images=[screenshot_b64],
+                images=[current_img],
             )
 
             grid_path = os.path.join(self.img_path, f"{click_hash}_grid_{i}.png")
@@ -140,18 +138,17 @@ class SemanticDesktop(Tool):
             merged_image = superimpose_images(image_path, grid_path, 1)
             merged_image.save(merged_image_path)
 
-            merged_image_b64 = image_to_b64(merged_image)
             self.task.post_message(
                 role="assistant",
                 msg=f"Merge image for depth {i}",
                 thread="debug",
-                images=[merged_image_b64],
+                images=[merged_image],
             )
 
             msg = RoleMessage(
                 role="user",
                 text=prompt,
-                images=[merged_image_b64],
+                images=[merged_image],
             )
             thread.add_msg(msg)
 
@@ -215,9 +212,9 @@ class SemanticDesktop(Tool):
         )
         self.task.post_message(
             role="assistant",
-            msg=f"Final debug img",
+            msg="Final debug img",
             thread="debug",
-            images=[image_to_b64(debug_img)],
+            images=[debug_img],
         )
         self._click_coords(x=click_x, y=click_y, type=type, button=button)
         return
@@ -238,21 +235,21 @@ class SemanticDesktop(Tool):
         # TODO: fix click cords in agentd
         logging.debug("moving mouse")
         body = {"x": int(x), "y": int(y)}
-        resp = requests.post(f"{self.desktop.base_url}/move_mouse", json=body)
+        resp = requests.post(f"{self.desktop.base_url}/v1/move_mouse", json=body)
         resp.raise_for_status()
         time.sleep(2)
 
         if type == "single":
             logging.debug("clicking")
             resp = requests.post(
-                f"{self.desktop.base_url}/click", json={"button": button}
+                f"{self.desktop.base_url}/v1/click", json={"button": button}
             )
             resp.raise_for_status()
             time.sleep(2)
         elif type == "double":
             logging.debug("double clicking")
             resp = requests.post(
-                f"{self.desktop.base_url}/double_click", json={"button": button}
+                f"{self.desktop.base_url}/v1/double_click", json={"button": button}
             )
             resp.raise_for_status()
             time.sleep(2)

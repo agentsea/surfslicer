@@ -4,11 +4,12 @@ import time
 import traceback
 from typing import Final, List, Optional, Tuple, Type
 
-from agentdesk.device import Desktop
+from agentdesk.device_v1 import Desktop
 from devicebay import Device
 from pydantic import BaseModel
 from rich.console import Console
 from rich.json import JSON
+from skillpacks import EnvState
 from skillpacks.server.models import V1ActionSelection
 from surfkit.agent import TaskAgent
 from taskara import Task, TaskStatus
@@ -55,7 +56,7 @@ class SurfSlicer(TaskAgent):
         # Create threads in the task to update the user
         console.print("creating threads...")
         task.ensure_thread("debug")
-        task.post_message("assistant", f"I'll post debug messages here", thread="debug")
+        task.post_message("assistant", "I'll post debug messages here", thread="debug")
 
         # Check that the device we received is one we support
         if not isinstance(device, Desktop):
@@ -88,7 +89,7 @@ class SurfSlicer(TaskAgent):
                 "click",
                 "drag_mouse",
                 "mouse_coordinates",
-                "take_screenshot",
+                "take_screenshots",
                 "open_url",
                 "double_click",
             ]
@@ -181,11 +182,11 @@ class SurfSlicer(TaskAgent):
             _thread.remove_images()
 
             # Take a screenshot of the desktop and post a message with it
-            screenshot_b64 = semdesk.desktop.take_screenshot()
+            screenshot_img = semdesk.desktop.take_screenshots()[0]
             task.post_message(
                 "assistant",
                 "current image",
-                images=[f"data:image/png;base64,{screenshot_b64}"],
+                images=[screenshot_img],
                 thread="debug",
             )
 
@@ -205,7 +206,7 @@ class SurfSlicer(TaskAgent):
                     "focus on the input field first by clicking on it. "
                     "Please return just the raw JSON."
                 ),
-                images=[f"data:image/png;base64,{screenshot_b64}"],
+                images=[screenshot_img],
             )
             _thread.add_msg(msg)
 
@@ -226,7 +227,7 @@ class SurfSlicer(TaskAgent):
 
                 task.post_message("assistant", f"👁️ {selection.observation}")
                 task.post_message("assistant", f"💡 {selection.reason}")
-                console.print(f"action selection: ", style="white")
+                console.print("action selection: ", style="white")
                 console.print(JSON.from_data(selection.model_dump()))
 
                 task.post_message(
@@ -246,7 +247,7 @@ class SurfSlicer(TaskAgent):
                     "assistant",
                     f"✅ I think the task is done, please review the result: {selection.action.parameters['value']}",
                 )
-                task.status = TaskStatus.REVIEW
+                task.status = TaskStatus.FINISHED
                 task.save()
                 return _thread, True
 
@@ -271,6 +272,7 @@ class SurfSlicer(TaskAgent):
 
             # Record the action for feedback and tuning
             task.record_action(
+                EnvState(images=[screenshot_img]),
                 prompt=response.prompt,
                 action=selection.action,
                 tool=semdesk.ref(),
